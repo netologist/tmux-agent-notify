@@ -53,6 +53,7 @@ def main():
     agents = AGENTS if 'all' in args.agents else tuple(dict.fromkeys(args.agents))
     if args.action == 'install':
         install_file(ROOT / 'notify.sh', BASE / 'notify.sh', True)
+        install_file(ROOT / 'agent-notify.tmux', BASE / 'agent-notify.tmux', True)
     for agent in agents:
         if agent in ('claude', 'codex'):
             subprocess.run([sys.executable, str(ROOT / 'adapters/claude-codex/install.py'), args.action, agent], check=True)

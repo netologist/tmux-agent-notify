@@ -34,6 +34,14 @@ The installer copies the notifier to `~/.config/tmux/agent-notify/` and installs
 
 `PI_CODING_AGENT_DIR` overrides Pi/OMP's default directories. Unset it when installing both; sharing the same extension directory between Pi and OMP is unsafe. `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `XDG_CONFIG_HOME` are honored for Claude, Codex and OpenCode respectively. The notifier itself is installed under `$HOME/.config/tmux`.
 
+To load the tmux plugin entry point, add this to `tmux.conf` and reload:
+
+```tmux
+run-shell '~/.config/tmux/agent-notify/agent-notify.tmux'
+```
+
+The entry point sets the platform's default sound only if the option is unset. Installing the agent adapters is still required.
+
 ### tmux popups
 
 A popup may inherit `TMUX` but not `TMUX_PANE`. Start the popup from a `run-shell` binding so tmux expands the pane ID before passing it as an environment variable:
