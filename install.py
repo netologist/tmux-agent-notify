@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Install tmux-agent-notify adapters without replacing existing extensions."""
 import argparse
+import hashlib
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parent
 HOME = Path.home()
 BASE = HOME / '.config/tmux/agent-notify'
-AGENTS = ('omp', 'pi', 'claude', 'codex', 'opencode')
+AGENTS = ('omp', 'pi', 'claude', 'codex', 'opencode', 'copilot', 'gemini', 'agy')
 
 
 def extension_path(agent):
@@ -35,6 +36,23 @@ def install_file(source, dest, executable=False):
         dest.chmod(dest.stat().st_mode | 0o111)
     print(f'installed {dest}')
 
+def install_notifier():
+    source = ROOT / 'notify.sh'
+    dest = BASE / 'notify.sh'
+    # Upgrade the exact previous release only; never overwrite user modifications.
+    previous = 'a9d55ee97d77ce380b5e9589c8b3bb555355eb8fbd24c1d54110102c5c995258'
+    if dest.is_file() and not dest.is_symlink() and hashlib.sha256(dest.read_bytes()).hexdigest() == previous:
+        fd, name = tempfile.mkstemp(prefix='.notify-', dir=dest.parent)
+        try:
+            with os.fdopen(fd, 'wb') as stream:
+                stream.write(source.read_bytes())
+                os.fchmod(stream.fileno(), 0o755)
+            os.replace(name, dest)
+        finally:
+            if os.path.exists(name):
+                os.unlink(name)
+    install_file(source, dest, True)
+
 
 def uninstall_file(source, dest):
     if not dest.exists() and not dest.is_symlink():
@@ -52,11 +70,15 @@ def main():
     args = parser.parse_args()
     agents = AGENTS if 'all' in args.agents else tuple(dict.fromkeys(args.agents))
     if args.action == 'install':
-        install_file(ROOT / 'notify.sh', BASE / 'notify.sh', True)
+        install_notifier()
         install_file(ROOT / 'agent-notify.tmux', BASE / 'agent-notify.tmux', True)
     for agent in agents:
         if agent in ('claude', 'codex'):
             subprocess.run([sys.executable, str(ROOT / 'adapters/claude-codex/install.py'), args.action, agent], check=True)
+        elif agent == 'copilot':
+            subprocess.run([sys.executable, str(ROOT / 'adapters/copilot/install.py'), args.action], check=True)
+        elif agent in ('gemini', 'agy'):
+            subprocess.run([sys.executable, str(ROOT / 'adapters/gemini/install.py'), args.action, agent], check=True)
         else:
             source = ROOT / 'adapters/agents' / f'{agent}.ts'
             dest = extension_path(agent)

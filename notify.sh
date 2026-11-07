@@ -1,7 +1,7 @@
 #!/bin/sh
 # Agent adapters call this after a user-facing turn finishes.
 [ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] || exit 0
-case "${1:-}" in omp|pi|claude|codex|opencode) agent=$1 ;; *) exit 2 ;; esac
+case "${1:-}" in omp|pi|claude|codex|opencode|copilot|gemini|agy) agent=$1 ;; *) exit 2 ;; esac
 command -v tmux >/dev/null 2>&1 || exit 0
 tmux display-message -p -t "$TMUX_PANE" '#{pane_id}' >/dev/null 2>&1 || exit 0
 

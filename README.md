@@ -11,8 +11,11 @@ Play a sound and show a tmux message when a coding agent's turn ends, without sc
 | Claude Code | `Stop` | Main agent, not `SubagentStop`. |
 | Codex | `Stop` | Start with `codex --no-daemon` so the hook inherits the correct pane; trust the hook when prompted. |
 | OpenCode | `session.status` | Root session transitions from busy to idle; launch the OpenCode server in the intended tmux pane. |
+| GitHub Copilot CLI | `agentStop` | User-level hook; ignores subagent events. |
+| Gemini CLI | `AfterAgent` | Runs after a response; another hook may request a retry. |
+| Antigravity CLI (`agy`) | `Stop` | Execution-loop stop; can also run for other Antigravity surfaces sharing its hook configuration. |
 
-Claude and Codex run Stop hooks alongside other hooks. Another Stop hook can continue the turn after a notification; their hook interfaces do not provide a post-arbitration completion event. OpenCode's server environment belongs to the server process, so an externally shared server cannot reliably attribute an event to a particular client pane. Run one server in the intended pane. OMP and Pi adapters only notify for interactive TUI sessions. Hooks or plugins disabled by an agent's policy cannot run.
+Claude, Codex, Copilot, Gemini and Antigravity can run other completion hooks that continue or retry a turn after this hook fires; an early or repeated notification is possible. Gemini and Antigravity do not document parent/subagent identifiers for these events, so subagent notifications cannot be reliably filtered. Copilot's sandbox may need access to the installed notifier and tmux socket. OpenCode's server environment belongs to the server process, so an externally shared server cannot reliably attribute an event to a particular client pane. Run one server in the intended pane. OMP and Pi adapters only notify for interactive TUI sessions. Hooks or plugins disabled by an agent's policy cannot run.
 
 ## Requirements
 
@@ -30,9 +33,9 @@ python3 install.py install all
 python3 install.py install omp claude
 ```
 
-The installer copies the notifier to `~/.config/tmux/agent-notify/` and installs selected adapters in the agents' standard user configuration directories. Claude and Codex hooks are merged with existing settings. Existing unrelated extension files are never overwritten. Restart the agents after installation. A running OMP/Pi process does not load an extension installed after startup. If Codex asks to trust the new hook, review it in `/hooks` and approve it.
+The installer copies the notifier to `~/.config/tmux/agent-notify/` and installs selected adapters in the agents' standard user configuration directories. Claude, Codex, Gemini and Antigravity hooks are merged with existing settings; Copilot uses its own hook file. Existing unrelated extension files are never overwritten. Restart the agents after installation. A running OMP/Pi process does not load an extension installed after startup. If Codex asks to trust the new hook, review it in `/hooks` and approve it.
 
-`PI_CODING_AGENT_DIR` overrides Pi/OMP's default directories. Unset it when installing both; sharing the same extension directory between Pi and OMP is unsafe. `CLAUDE_CONFIG_DIR`, `CODEX_HOME` and `XDG_CONFIG_HOME` are honored for Claude, Codex and OpenCode respectively. The notifier itself is installed under `$HOME/.config/tmux`.
+`PI_CODING_AGENT_DIR` overrides Pi/OMP's default directories. Unset it when installing both; sharing the same extension directory between Pi and OMP is unsafe. `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `COPILOT_HOME`, `GEMINI_CLI_HOME` and `XDG_CONFIG_HOME` are honored for Claude, Codex, Copilot, Gemini and OpenCode respectively. Gemini defaults to `~/.gemini/settings.json`; Antigravity uses `~/.gemini/config/hooks.json`. The notifier itself is installed under `$HOME/.config/tmux`.
 
 To load the tmux plugin entry point, add this to `tmux.conf` and reload:
 
@@ -72,7 +75,7 @@ python3 install.py uninstall all
 python3 install.py uninstall omp claude
 ```
 
-Only matching installed adapter files and this project's Claude/Codex hook entries are removed. The shared notifier and hook handler remain, so removing one agent never breaks another. Remove `~/.config/tmux/agent-notify/` manually after uninstalling every adapter if no other configuration uses it.
+Only matching installed adapter files and this project's hook entries are removed. The shared notifier and Claude/Codex hook handler remain, so removing one agent never breaks another. Remove `~/.config/tmux/agent-notify/` manually after uninstalling every adapter if no other configuration uses it.
 
 ## Security and scope
 
